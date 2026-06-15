@@ -8,15 +8,22 @@ export default function Home() {
       </h1>
 
       <p className="mt-4 text-center text-gray-600">
-        Trouvez vos médicaments rapidement.
+        Trouvez vos médicaments rapidement partout au Burkina Faso.
       </p>
 
-      <div className="mt-8 flex gap-4">
+      <div className="mt-8 flex flex-wrap gap-4 justify-center">
         <Link
           href="/login"
           className="bg-green-600 text-white px-6 py-3 rounded-lg"
         >
           Se connecter
+        </Link>
+
+        <Link
+          href="/register"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg"
+        >
+          S'inscrire
         </Link>
 
         <Link
