@@ -14,14 +14,7 @@ import {
   where,
 } from "firebase/firestore";
 
-export const addStock = async (
-  stock: any
-) => {
-  await addDoc(
-    collection(db, "stocks"),
-    stock
-  );
-};
+// addStock defined later with returned document id
 
 export const getStocks = async () => {
   const snapshot = await getDocs(
@@ -118,3 +111,7 @@ export const getOutOfStockCount =
         doc.data().quantity === 0
     ).length;
   };
+  export const addStock = async (stock: any): Promise<string> => {
+  const docRef = await addDoc(collection(db, "stocks"), stock);
+  return docRef.id;
+};

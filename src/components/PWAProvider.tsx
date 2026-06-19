@@ -1,0 +1,22 @@
+"use client";
+
+import { useEffect } from "react";
+
+export default function PWAProvider() {
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((registration) => {
+            console.log("SW enregistré avec succès !", registration);
+          })
+          .catch((error) => {
+            console.log("Échec de l'enregistrement SW:", error);
+          });
+      });
+    }
+  }, []);
+
+  return null;
+}

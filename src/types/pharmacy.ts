@@ -4,4 +4,7 @@ export interface Pharmacy {
   city: string;
   phone: string;
   medicines: string[];
+  latitude: number;
+  longitude: number;
 }
+

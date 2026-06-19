@@ -11,6 +11,8 @@ export default function AddPharmacyPage() {
   const [loading, setLoading] = useState(false);
   const [medicines, setMedicines] = useState("");
   const router = useRouter();
+ const [latitude, setLatitude] = useState("");
+const [longitude, setLongitude] = useState("");
 
   const handleSubmit = async () => {
     if (!name || !city || !phone) {
@@ -21,10 +23,12 @@ export default function AddPharmacyPage() {
     try {
       setLoading(true);
 
-      await addPharmacy({
+     await addPharmacy({
   name,
   city,
   phone,
+  latitude: Number(latitude),
+  longitude: Number(longitude),
   medicines: medicines
     .split(",")
     .map((m) => m.trim())
@@ -70,6 +74,21 @@ export default function AddPharmacyPage() {
           placeholder="Téléphone"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
+          className="w-full border p-3 rounded mb-4"
+        />
+        <input
+          type="text"
+          placeholder="Latitude"
+          value={latitude}
+          onChange={(e) => setLatitude(e.target.value)}
+          className="w-full border p-3 rounded mb-4"
+        />
+
+        <input
+          type="text"
+          placeholder="Longitude"
+          value={longitude}
+          onChange={(e) => setLongitude(e.target.value)}
           className="w-full border p-3 rounded mb-4"
         />
         <input

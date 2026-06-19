@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 import { Package } from "lucide-react";
 import { Boxes } from "lucide-react";
 import { History } from "lucide-react";
+import { MapPinned } from "lucide-react";
 export default function Sidebar() {
   const router = useRouter();
   const { role } = useUserRole();
@@ -154,6 +155,13 @@ export default function Sidebar() {
         Historique
     </Link>
      )}
+     <Link
+  href="/dashboard/map"
+  className="flex items-center gap-3 hover:bg-green-700 p-2 rounded"
+>
+  <MapPinned size={20} />
+  Carte
+</Link>
      {isAdmin && (
   <Link
     href="/dashboard/users"

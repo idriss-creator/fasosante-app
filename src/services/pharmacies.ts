@@ -14,6 +14,8 @@ export  const addPharmacy = async (pharmacy: {
   city: string;
   phone: string;
   medicines: string[];
+  latitude: number;
+  longitude: number;
   
 }) => {
  
@@ -67,7 +69,16 @@ export const searchPharmaciesByMedicine = async (
     )
   );
 };
-
+export const getPharmacyByOwner = async (ownerId: string) => {
+  const q = query(
+    collection(db, "pharmacies"),
+    where("ownerId", "==", ownerId)
+  );
+  const querySnapshot = await getDocs(q);
+  if (querySnapshot.empty) return null;
+  const doc = querySnapshot.docs[0];
+  return { id: doc.id, ...doc.data() };
+};
 import {
   doc,
   getDoc,

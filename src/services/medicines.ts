@@ -10,18 +10,18 @@ export const addMedicine = async (medicine: {
   name: string;
   description: string;
   category: string;
-}) => {
-  return addDoc(collection(db, "medicines"), {
+}): Promise<string> => {
+  const docRef = await addDoc(collection(db, "medicines"), {
     ...medicine,
     available: true,
   });
+  return docRef.id;
 };
 
 export const getMedicinesCount = async () => {
   const medicines = await getMedicines();
   return medicines.length;
 };
-
 export const getMedicines = async () => {
   const snapshot = await getDocs(
     collection(db, "medicines")
