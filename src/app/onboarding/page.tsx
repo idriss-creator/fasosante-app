@@ -8,20 +8,20 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const handleNext = () => {
-    if (currentSlide < 2) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      // Fin de l'onboarding
-      localStorage.setItem("hasSeenOnboarding", "true");
-      router.push("/login");
-    }
-  };
-
-  const handleSkip = () => {
-    localStorage.setItem("hasSeenOnboarding", "true");
+ const handleNext = () => {
+  if (currentSlide < 2) {
+    setCurrentSlide(currentSlide + 1);
+  } else {
+    // ✅ Utiliser un cookie au lieu de localStorage
+    document.cookie = "hasSeenOnboarding=true; path=/; max-age=31536000"; // 1 an
     router.push("/login");
-  };
+  }
+};
+
+const handleSkip = () => {
+  document.cookie = "hasSeenOnboarding=true; path=/; max-age=31536000";
+  router.push("/login");
+};
 
   // Slide 1: Recherche
   const renderSlide1 = () => (
