@@ -2,7 +2,7 @@
   "name": "FASOSANTÉ - Votre santé à portée de main",
   "short_name": "FASOSANTÉ",
   "description": "Plateforme de santé au Burkina Faso. Trouvez vos médicaments, réservez et gérez votre santé.",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#059669",
   "theme_color": "#059669",
