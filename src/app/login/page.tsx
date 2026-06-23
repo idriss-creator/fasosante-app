@@ -24,7 +24,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-router.push("/dashboard");
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background decor */}
