@@ -34,21 +34,23 @@ export default function HomePage() {
       setTimeout(() => setPhase(4), 1800),
     ];
 
-    const redirectTimer = setTimeout(() => {
-      // ✅ Vérifier l'utilisateur (Firebase OU cookie)
-      const hasSeenOnboarding = document.cookie.includes("hasSeenOnboarding=true");
+   const redirectTimer = setTimeout(() => {
+  // ✅ Vérification sécurisée (côté client uniquement)
+  const hasSeenOnboarding = 
+    typeof document !== 'undefined' && 
+    document.cookie.includes("hasSeenOnboarding=true");
 
-      if (currentUser) {
-        // Utilisateur connecté → Dashboard
-        router.push("/dashboard");
-      } else if (hasSeenOnboarding) {
-        // Déjà vu onboarding → Login
-        router.push("/login");
-      } else {
-        // Première visite → Onboarding
-        router.push("/onboarding");
-      }
-    }, 3000);
+  if (currentUser) {
+    router.push("/dashboard");
+  } else if (hasSeenOnboarding) {
+    router.push("/login");
+  } else {
+    router.push("/onboarding");
+  }
+  if (typeof document !== 'undefined') {
+  document.cookie = "hasSeenOnboarding=true; path=/; max-age=31536000";
+}
+}, 3000);
 
     return () => {
       timers.forEach(clearTimeout);
