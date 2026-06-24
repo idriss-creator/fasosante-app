@@ -1,6 +1,10 @@
-const CACHE_NAME = 'fasosante-v1';
-const urlsToCache = [
-  '/',
+const CACHE_NAME = 'fasosante-v3';
+const STATIC_CACHE = 'fasosante-static-v3';
+const DYNAMIC_CACHE = 'fasosante-dynamic-v3';
+
+// Assets statiques à mettre en cache immédiatement
+const STATIC_ASSETS = [
+ '/',
   '/dashboard',
   '/dashboard/search',
   '/dashboard/pharmacies',
@@ -15,61 +19,90 @@ const urlsToCache = [
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installation en cours...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then((cache) => {
-        console.log('Cache ouvert');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] Cache des assets statiques');
+        return cache.addAll(STATIC_ASSETS);
       })
-      .catch((err) => console.log('Erreur cache:', err))
+      .then(() => self.skipWaiting())
+      .catch((err) => console.error('[SW] Erreur cache statique:', err))
   );
 });
 
-// Interception des requêtes (Stratégie : Cache First, puis Network)
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Si c'est dans le cache, on le retourne
-        if (response) {
-          return response;
-        }
-        // Sinon, on va sur le réseau
-        return fetch(event.request).then(
-          (response) => {
-            // Si la réponse est valide, on la met en cache
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-            return response;
-          }
-        );
-      })
-      .catch(() => {
-        // Fallback si hors ligne et pas dans le cache
-        if (event.request.url.endsWith('.png') || event.request.url.endsWith('.jpg')) {
-          return caches.match('/icons/icon-192x192.png');
-        }
-      })
-  );
-});
-
-// Nettoyage des anciens caches
+// Activation du Service Worker
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+  console.log('[SW] Activation en cours...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
+        cacheNames
+          .filter((cacheName) => {
+            return (
+              cacheName !== STATIC_CACHE &&
+              cacheName !== DYNAMIC_CACHE &&
+              cacheName.startsWith('fasosante-')
+            );
+          })
+          .map((cacheName) => {
+            console.log('[SW] Suppression ancien cache:', cacheName);
             return caches.delete(cacheName);
-          }
-        })
+          })
       );
-    })
+    }).then(() => self.clients.claim())
   );
+});
+
+// Interception des requêtes
+self.addEventListener('fetch', (event) => {
+  // Ignorer les requêtes non-GET
+  if (event.request.method !== 'GET') return;
+
+  // Ignorer les requêtes Chrome DevTools
+  if (event.request.url.includes('chrome-extension')) return;
+
+  event.respondWith(
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        // Si c'est dans le cache, retourner
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Sinon, aller sur le réseau
+        return fetch(event.request)
+          .then((response) => {
+            // Si la réponse n'est pas valide, retourner
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Cloner la réponse pour la mettre en cache
+            const responseToCache = response.clone();
+
+            caches.open(DYNAMIC_CACHE)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          })
+          .catch((error) => {
+            console.error('[SW] Erreur réseau:', error);
+            
+            // Fallback pour les pages HTML
+            if (event.request.headers.get('accept')?.includes('text/html')) {
+              return caches.match('/');
+            }
+          });
+      })
+  );
+});
+
+// Mise à jour automatique
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
