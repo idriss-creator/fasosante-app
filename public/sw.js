@@ -1,53 +1,44 @@
-const CACHE_NAME = 'fasosante-v3';
-const STATIC_CACHE = 'fasosante-static-v3';
-const DYNAMIC_CACHE = 'fasosante-dynamic-v3';
+const CACHE_NAME = 'fasosante-v4';
 
-// Assets statiques à mettre en cache immédiatement
+// Uniquement les fichiers qui existent VRAIMENT
 const STATIC_ASSETS = [
- '/',
-  '/dashboard',
-  '/dashboard/search',
-  '/dashboard/pharmacies',
-  '/dashboard/reservations',
-  '/dashboard/profile',
+  '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-  , '/images/payment/orange-money.png',
-  '/images/payment/moov-money.png',   
+  '/icons/icon-512x512.png',
 ];
 
-// Installation du Service Worker
+// Installation
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installation en cours...');
+  console.log('[SW] Installation...');
   event.waitUntil(
-    caches.open(STATIC_CACHE)
+    caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[SW] Cache des assets statiques');
-        return cache.addAll(STATIC_ASSETS);
+        console.log('[SW] Mise en cache des assets');
+        // Cache un par un pour ne pas échouer si un fichier manque
+        return Promise.all(
+          STATIC_ASSETS.map((url) =>
+            cache.add(url).catch((err) => {
+              console.warn(`[SW] Impossible de cacher ${url}:`, err);
+            })
+          )
+        );
       })
       .then(() => self.skipWaiting())
-      .catch((err) => console.error('[SW] Erreur cache statique:', err))
   );
 });
 
-// Activation du Service Worker
+// Activation
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activation en cours...');
+  console.log('[SW] Activation...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((cacheName) => {
-            return (
-              cacheName !== STATIC_CACHE &&
-              cacheName !== DYNAMIC_CACHE &&
-              cacheName.startsWith('fasosante-')
-            );
-          })
-          .map((cacheName) => {
-            console.log('[SW] Suppression ancien cache:', cacheName);
-            return caches.delete(cacheName);
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => {
+            console.log('[SW] Suppression ancien cache:', name);
+            return caches.delete(name);
           })
       );
     }).then(() => self.clients.claim())
@@ -56,53 +47,45 @@ self.addEventListener('activate', (event) => {
 
 // Interception des requêtes
 self.addEventListener('fetch', (event) => {
-  // Ignorer les requêtes non-GET
   if (event.request.method !== 'GET') return;
-
-  // Ignorer les requêtes Chrome DevTools
   if (event.request.url.includes('chrome-extension')) return;
 
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        // Si c'est dans le cache, retourner
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        // Sinon, aller sur le réseau
-        return fetch(event.request)
+    caches.match(event.request).then((cached) => {
+      // Si en cache, on retourne
+      if (cached) {
+        // On met à jour en arrière-plan
+        fetch(event.request)
           .then((response) => {
-            // Si la réponse n'est pas valide, retourner
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Cloner la réponse pour la mettre en cache
-            const responseToCache = response.clone();
-
-            caches.open(DYNAMIC_CACHE)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
+            if (response && response.status === 200) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, clone);
               });
-
-            return response;
-          })
-          .catch((error) => {
-            console.error('[SW] Erreur réseau:', error);
-            
-            // Fallback pour les pages HTML
-            if (event.request.headers.get('accept')?.includes('text/html')) {
-              return caches.match('/');
             }
-          });
-      })
-  );
-});
+          })
+          .catch(() => {});
+        return cached;
+      }
 
-// Mise à jour automatique
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+      // Sinon, on va sur le réseau
+      return fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) return response;
+
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone);
+          });
+
+          return response;
+        })
+        .catch(() => {
+          // Fallback : page d'accueil si HTML
+          if (event.request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/');
+          }
+        });
+    })
+  );
 });
